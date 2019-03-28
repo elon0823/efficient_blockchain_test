@@ -1,0 +1,26 @@
+{
+  "name": "crytochain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --watchAll",
+    "start": "node index.js",
+    "dev-peer": "cross-env GENERATE_PEER_PORT='true' node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^24.1.0"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "cross-env": "^5.2.0",
+    "eslint": "^5.15.3",
+    "express": "^4.16.4",
+    "hex-to-binary": "^1.0.1",
+    "redis": "^2.8.0",
+    "request": "^2.88.0"
+  }
+}
