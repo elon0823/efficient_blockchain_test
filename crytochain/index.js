@@ -5,12 +5,15 @@ const bodyParser = require("body-parser");
 const TransactionPool = require('./wallet/transaction-pool');
 const PubSub = require("./app/pubsub");
 const Wallet = require('./wallet/wallet');
+const TransactionMiner = require('./app/transaction-miner');
 
 const app = express();
 const blockchain = new Blockchain();
 let transactionPool = new TransactionPool();
 const wallet = new Wallet();
-const pupsub = new PubSub({blockchain, transactionPool});
+const pubsub = new PubSub({blockchain, transactionPool});
+const transactionMiner = new TransactionMiner({ blockchain, transactionPool, wallet, pubsub });
+
 const DEFAULT_PORT = 3000;
 let PEER_PORT;
 
@@ -28,7 +31,7 @@ app.post('/api/mine', (req, res) => {
 
     blockchain.addBlock({data});
 
-    pupsub.broadcastChain();
+    pubsub.broadcastChain();
 
     res.redirect("/api/blocks");
 });
@@ -40,10 +43,10 @@ app.post('/api/transact', (req, res) => {
         if (transaction) {
             transaction.update({senderWallet: wallet, recipient, amount });
         } else {
-            transaction = wallet.createTransaction({ recipient, amount });   
+            transaction = wallet.createTransaction({ recipient, amount, chain:blockchain.chain });   
         }
         transactionPool.setTransaction(transaction);
-        pupsub.broadcaseTransaction(transaction);
+        pubsub.broadcaseTransaction(transaction);
 
         res.json({ type:'success', transaction });
     }
@@ -54,6 +57,20 @@ app.post('/api/transact', (req, res) => {
 app.get('/api/transaction-pool-map', (req, res) => {
     res.json(transactionPool.transactionMap);
 });
+app.get('/api/mine-transactions', (req, res) => {
+    transactionMiner.mineTransactions();
+
+    res.redirect('/api/blocks');
+});
+
+app.get("/api/wallet-info", (req, res) => {
+    const address = wallet.publicKey;
+    res.json({ 
+        address: address,
+        balanace: Wallet.calculateBalance({chain: blockchain.chain, address: address })
+    });
+});
+
 
 const syncChains = () => {
     request({url: `${ROOT_NODE_ADDRESS}/API/blocks`}, (error, response, body) => {
